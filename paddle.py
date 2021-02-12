@@ -21,6 +21,7 @@ class Paddle:
 
         if(key == ' '):
             set_start(False)
+            self.__filled = False
 
     def get_length(self):
         return self.__length

@@ -17,3 +17,6 @@ class Brick:
 
     def dec_strength(self, value):
         pass
+
+    def destroy(self):
+        self._is_present = False

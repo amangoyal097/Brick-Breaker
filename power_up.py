@@ -3,13 +3,13 @@ import time
 
 class Power_Up:
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, symbol):
         self.__x = x
         self.__y = y
         self.__start_time = None
         self.__is_present = True
         self.__caught = False
-        self.__symbol = '@'
+        self.__symbol = symbol
         self.__last_change = time.time()
 
     def get_coordinates(self, width):

@@ -5,14 +5,16 @@ import numpy as np
 
 class Ball():
 
-    def __init__(self, length, width):
-        self.__row = width - 4
-        ball_position = randint(0, 7)
-        self.__column = int(length / 2) + ball_position - 2
-        self.__start = True
-        self.__y_velocity = 1
-        self.__x_velocity = 0
+    def __init__(self, row, column, xv, yv, start):
+        self.__row = row
+        self.__column = column
+        self.__start = start
+        self.__y_velocity = yv
+        self.__x_velocity = xv
+        self.__is_present = True
+        self.__through = False
         self.__last_change = time.time()
+        self.__grab = False
 
     def __paddle_collision(self, row, left_end, length):
         if(self.__start == False
@@ -22,6 +24,8 @@ class Ball():
             self.__y_velocity *= -1
             self.__x_velocity += self.__column - left_end - \
                 int(length / 2) + 1
+            if(self.__grab):
+                self.__start = True
 
     def __set_velocity(self, length, width, row, left_end, paddle_length):
 
@@ -74,14 +78,17 @@ class Ball():
             new_x = self.__row
             new_y = self.__column + x_dist
             if(grid[new_x][new_y] != None):
-                x, y = new_x, new_y
                 score_inc += 10
-                if(grid[x - 1][y] == None or grid[x + 1][y] == None and grid[x][y - 1] != None and grid[x][y + 1] != None):
-                    yv_change = True
+                if(self.__through):
+                    grid[new_x][new_y].destroy()
                 else:
-                    xv_change, yv_change = self.__change_velocity(
-                        self.__column, self.__row, x, y)
-                power_up = grid[x][y].dec_strength(1)
+                    x, y = new_x, new_y
+                    if(grid[x - 1][y] == None or grid[x + 1][y] == None and grid[x][y - 1] != None and grid[x][y + 1] != None):
+                        yv_change = True
+                    else:
+                        xv_change, yv_change = self.__change_velocity(
+                            self.__column, self.__row, x, y)
+                    power_up = grid[x][y].dec_strength(1)
                 break
         bricks_new = []
         for row in grid:
@@ -94,19 +101,28 @@ class Ball():
         if(yv_change):
             self.__y_velocity *= -1
         self.__column += x_dist
-        return bricks, score_inc, power_up
+        return bricks, score_inc, power_up, xv_change or yv_change
 
-    def get_ball(self, length, width, row, left_end, paddle_lenth, reduce_life, bricks):
+    def get_ball(self, length, width, row, left_end, paddle_lenth, bricks):
         score_inc = 0
         power_up = None
         if(not self.__start and int((time.time() - self.__last_change) / 0.1) > 0):
-            self.__set_velocity(length, width, row, left_end, paddle_lenth)
-            self.__row -= self.__y_velocity
-            bricks, score_inc, power_up = self.__bricks_collision(
-                bricks, length, width)
+            self.__set_velocity(length, width, row, left_end,
+                                paddle_lenth)
+            mul = 1
+            if(self.__y_velocity < 0):
+                mul = -1
+            for i in range(1, abs(self.__y_velocity) + 1):
+                val = i * mul
+                self.__row -= val
+                bricks, score_inc, power_up, flag = self.__bricks_collision(
+                    bricks, length, width)
+                if(flag):
+                    break
             self.__last_change = time.time()
         if(self.__row >= width - 1):
-            reduce_life()
+            self.__is_present = False
+        self.__row = min(self.__row, width - 1)
         self.__row = max(self.__row, 0)
         self.__column = max(self.__column, 0)
         self.__column = min(self.__column, length - 1)
@@ -115,9 +131,33 @@ class Ball():
     def is_start(self):
         return self.__start
 
+    def is_present(self):
+        return self.__is_present
+
     def set_start(self, start):
         self.__start = start
         self.__last_change = time.time()
 
     def move(self, value):
         self.__column += value
+
+    def get_values(self):
+        return self.__row, self.__column, self.__x_velocity, self.__y_velocity
+
+    def finish(self):
+        self.__is_present = False
+
+    def change_yv(self, value):
+        mul = 1
+        if(self.__y_velocity < 0):
+            mul = -1
+        magnitude = 2
+        if(value == -1):
+            magnitude = 1
+        self.__y_velocity = mul * magnitude
+
+    def set_through(self, value):
+        self.__through = value
+
+    def set_grab(self, value):
+        self.__grab = value

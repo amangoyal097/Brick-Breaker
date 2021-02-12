@@ -14,14 +14,17 @@ class Player():
 
     def print_screen(self):
         self.__score += self.__scr.print_screen(self.__start_time,
-                                                self.__score, self.__lives)
+                                                self.__score, self.__lives, self.game_over)
 
     def paddle_input(self, ch):
         self.__scr.paddle_move(ch)
 
+    def game_over(self):
+        self.__in_game = 0
+
     def reduce_life(self):
         if(self.__lives == 0):
-            self.__in_game = 0
+            self.game_over()
         else:
             self.__lives -= 1
             os.system('clear')

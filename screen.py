@@ -5,7 +5,7 @@ from unbreakable import Unbreakable
 from normal import Normal
 from colorama import init, Fore, Style
 import numpy as np
-from random import random
+from random import random, randint
 
 
 class Screen:
@@ -13,8 +13,11 @@ class Screen:
     def __init__(self, reduce_life):
         self.__screen = []
         self.__length = 41
-        self.__width = 30
-        self.__ball = Ball(self.__length, self.__width)
+        self.__width = 31
+        ball_position = randint(0, 7)
+        ball_col = int(self.__length / 2) + ball_position - 2
+        ball_row = self.__width - 4
+        self.__balls = [Ball(ball_row, ball_col, 0, 1, True)]
         self.__paddle = Paddle(self.__length, self.__width)
         bricks = []
         self.__power_ups = []
@@ -29,7 +32,7 @@ class Screen:
             for j in range(4, self.__length - 6, 2):
                 num = random()
                 num2 = random()
-                if(num2 < 0.8):
+                if(num2 < 0.3):
                     contains_power_up = True
                 else:
                     contains_power_up = False
@@ -45,7 +48,10 @@ class Screen:
         self.__bricks = np.array(bricks)
 
     def new_life(self):
-        self.__ball = Ball(self.__length, self.__width)
+        ball_position = randint(0, 7)
+        ball_col = int(self.__length / 2) + ball_position - 2
+        ball_row = self.__width - 4
+        self.__balls = [Ball(ball_row, ball_col, 0, 1, True)]
         self.__paddle = Paddle(self.__length, self.__width)
         self.__power_ups = []
 
@@ -55,12 +61,36 @@ class Screen:
                 if(i == 0 or j == 0 or i == self.__width - 1 or j == self.__length - 1):
                     self.__screen[i][j] = '.'
 
-    def __set_ball(self, row, column):
-        self.__screen[row][column] = Fore.BLUE + '*'
+    def __set_balls(self):
+        total = 0
+        for ball in self.__balls:
+            if(not ball.is_present()):
+                continue
+            row, column, self.__bricks, value, power_up = ball.get_ball(self.__length, self.__width, self.__paddle.get_row(
+            ), self.__paddle.get_left_end(), self.__paddle.get_length(), self.__bricks)
+            total += value
+            if(power_up != None):
+                self.__power_ups.append(power_up)
+            self.__screen[row][column] = Fore.BLUE + '*'
+        return total
 
     def paddle_move(self, ch):
-        self.__paddle.move(self.__length, self.__ball.is_start(),
-                           ch, self.__ball.move, self.__ball.set_start)
+
+        chosen_ball = None
+        for ball in self.__balls:
+            if(ball.is_start()):
+                chosen_ball = ball
+                break
+
+        if(chosen_ball == None):
+            for ball in self.__balls:
+                if(ball.is_present()):
+                    self.__paddle.move(self.__length, ball.is_start(),
+                                       ch, ball.move, ball.set_start)
+                    break
+        else:
+            self.__paddle.move(self.__length, chosen_ball.is_start(),
+                               ch, chosen_ball.move, chosen_ball.set_start)
 
     def __set_paddle(self):
         row, left_end, length = self.__paddle.get_dimensions()
@@ -87,16 +117,72 @@ class Screen:
                 if(x == row - 1 and y >= left_end - 1 and y <= left_end - 1 + length):
                     power_up.caught()
                     dict = power_up.execute()
-                    if "length" in dict:
+                    type = list(dict.keys())[0]
+                    if type == "length":
                         self.__paddle.change_length(dict["length"])
-
+                    elif type == "multiply":
+                        new_balls = []
+                        for ball in self.__balls:
+                            if(not ball.is_present()):
+                                continue
+                            row, column, xv, yv = ball.get_values()
+                            new_balls.append(
+                                Ball(row, column, xv, -yv, False))
+                        self.__balls += new_balls
+                    elif type == "fast":
+                        for ball in self.__balls:
+                            ball.change_yv(1)
+                    elif type == "through":
+                        for ball in self.__balls:
+                            ball.set_through(True)
+                    elif type == "grab":
+                        for ball in self.__balls:
+                            ball.set_grab(True)
             else:
                 if(int(time.time() - power_up.get_start_time()) > 5):
                     dict = power_up.reverse()
-                    if "length" in dict:
+                    type = list(dict.keys())[0]
+                    if type == "length":
                         self.__paddle.change_length(dict["length"])
+                    elif type == "multiply":
+                        flag = False
+                        for j in range(0, len(self.__balls)):
+                            ball = self.__balls[j]
+                            if(not ball.is_present()):
+                                continue
+                            if(not flag):
+                                flag = True
+                            else:
+                                self.__balls[j].finish()
+                    elif type == "fast":
+                        for ball in self.__balls:
+                            ball.change_yv(-1)
+                    elif type == "through":
+                        for ball in self.__balls:
+                            ball.set_through(False)
+                    elif type == "grab":
+                        for ball in self.__balls:
+                            ball.set_grab(False)
 
-    def print_screen(self, start_time, score, lives):
+    def __check_life(self):
+
+        for ball in self.__balls:
+            if(ball.is_present() == True):
+                return True
+        return False
+
+    def print_screen(self, start_time, score, lives, game_over):
+        flag = False
+        for brick in self.__bricks:
+            if(brick.is_present() == True):
+                flag = True
+
+        if(not flag):
+            game_over()
+        if(not self.__check_life()):
+            self.__reduce_life()
+            return 0
+
         time_played = int(time.time() - start_time)
         for i in range(0, len(self.__screen)):
             for j in range(0, len(self.__screen[i])):
@@ -104,11 +190,7 @@ class Screen:
         self.__set_boundary()
         self.__set_bricks()
         self.__set_paddle()
-        row, column, self.__bricks, value, power_up = self.__ball.get_ball(self.__length, self.__width, self.__paddle.get_row(
-        ), self.__paddle.get_left_end(), self.__paddle.get_length(), self.__reduce_life, self.__bricks)
-        self.__set_ball(row, column)
-        if(power_up != None):
-            self.__power_ups.append(power_up)
+        value = self.__set_balls()
         self.__set_power_ups()
         print("\n\n\n\n\n\n\n\n\n")
         print("time " + str(time_played))
