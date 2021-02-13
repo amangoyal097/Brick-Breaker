@@ -55,6 +55,27 @@ class Ball():
 
         return xv_change, yv_change
 
+    def __dir_change(self, grid, x, y):
+        xv_change = False
+        yv_change = False
+        if(grid[x - 1][y] == None or grid[x + 1][y] == None and grid[x][y - 1] != None and grid[x][y + 1] != None):
+            yv_change = True
+        else:
+            xv_change, yv_change = self.__change_velocity(
+                self.__column, self.__row, x, y)
+        return xv_change, yv_change
+
+    def __explode(self, grid, x, y):
+        if(grid[x][y] == None or not grid[x][y].is_present()):
+            return grid
+        grid[x][y].destroy()
+        if(grid[x][y].is_exploding()):
+            for i in {-2, 0, 2}:
+                for j in {-2, 0, 2}:
+                    if((i or j) and grid[x + i][y + j] != None):
+                        grid = self.__explode(grid, x + i, y + j)
+        return grid
+
     def __bricks_collision(self, bricks, length, width):
         mul = 1
         if(self.__x_velocity < 0):
@@ -79,16 +100,16 @@ class Ball():
             new_y = self.__column + x_dist
             if(grid[new_x][new_y] != None):
                 score_inc += 10
-                if(self.__through):
+                if(grid[new_x][new_y].is_exploding()):
+                    grid = self.__explode(grid, new_x, new_y)
+                    xv_change, yv_change = self.__dir_change(
+                        grid, new_x, new_y)
+                elif(self.__through):
                     grid[new_x][new_y].destroy()
                 else:
-                    x, y = new_x, new_y
-                    if(grid[x - 1][y] == None or grid[x + 1][y] == None and grid[x][y - 1] != None and grid[x][y + 1] != None):
-                        yv_change = True
-                    else:
-                        xv_change, yv_change = self.__change_velocity(
-                            self.__column, self.__row, x, y)
-                    power_up = grid[x][y].dec_strength(1)
+                    xv_change, yv_change = self.__dir_change(
+                        grid, new_x, new_y)
+                    power_up = grid[new_x][new_y].dec_strength(1)
                 break
         bricks_new = []
         for row in grid:

@@ -8,6 +8,7 @@ class Brick:
         self._y = y
         self._is_present = True
         self._contains_power_up = contains_power_up
+        self._is_exploding = False
 
     def get_coordinates(self):
         return self._x, self._y
@@ -20,3 +21,6 @@ class Brick:
 
     def destroy(self):
         self._is_present = False
+
+    def is_exploding(self):
+        return self._is_exploding

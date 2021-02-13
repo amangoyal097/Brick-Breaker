@@ -6,13 +6,14 @@ from normal import Normal
 from colorama import init, Fore, Style
 import numpy as np
 from random import random, randint
+from exploding import Exploding
 
 
 class Screen:
 
     def __init__(self, reduce_life):
         self.__screen = []
-        self.__length = 41
+        self.__length = 61
         self.__width = 31
         ball_position = randint(0, 7)
         ball_col = int(self.__length / 2) + ball_position - 2
@@ -30,6 +31,9 @@ class Screen:
         self.__set_boundary()
         for i in range(3, 8, 2):
             for j in range(4, self.__length - 6, 2):
+                if(i == 5 and j > 9 and j < 21):
+                    bricks.append(Exploding(i, j, False))
+                    continue
                 num = random()
                 num2 = random()
                 if(num2 < 0.3):
@@ -71,7 +75,7 @@ class Screen:
             total += value
             if(power_up != None):
                 self.__power_ups.append(power_up)
-            self.__screen[row][column] = Fore.BLUE + '*'
+            self.__screen[row][column] = '*'
         return total
 
     def paddle_move(self, ch):
