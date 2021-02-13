@@ -196,12 +196,11 @@ class Screen:
         self.__set_paddle()
         value = self.__set_balls()
         self.__set_power_ups()
-        print("\n\n\n\n\n\n\n\n\n")
         print("time " + str(time_played))
         print("score " + str(score))
         print("Lives " + str(lives))
         for row in self.__screen:
-            print("\t\t\t\t\t\t", end="")
+            print("  ", end="")
             for point in row:
                 print(point + Style.RESET_ALL, end="")
             print()
