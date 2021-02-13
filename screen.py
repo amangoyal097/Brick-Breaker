@@ -204,6 +204,7 @@ class Screen:
             for point in row:
                 print(point + Style.RESET_ALL, end="")
             print()
+        print("Press Q to exit")
         return value
 
     def get_width(self):
