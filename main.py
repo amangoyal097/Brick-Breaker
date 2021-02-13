@@ -3,7 +3,7 @@ from get_input import Get, input_to
 from random import randint
 import time
 from player import Player
-os.system("resize -s 35 65")
+os.system("resize -s 37 65")
 player = Player()
 while(player.in_game()):
     player.print_screen()
