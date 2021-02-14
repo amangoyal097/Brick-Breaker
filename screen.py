@@ -66,16 +66,19 @@ class Screen:
                     self.__screen[i][j] = '.'
 
     def __set_balls(self):
-        total = 0
         for ball in self.__balls:
             if(not ball.is_present()):
                 continue
-            row, column, self.__bricks, value, power_up = ball.get_ball(self.__length, self.__width, self.__paddle.get_row(
+            row, column, self.__bricks, power_up = ball.get_ball(self.__length, self.__width, self.__paddle.get_row(
             ), self.__paddle.get_left_end(), self.__paddle.get_length(), self.__bricks)
-            total += value
             if(power_up != None):
                 self.__power_ups.append(power_up)
             self.__screen[row][column] = '*'
+
+        total = 0
+        for brick in self.__bricks:
+            if(not brick.is_present()):
+                total += 10
         return total
 
     def paddle_move(self, ch):

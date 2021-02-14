@@ -92,14 +92,12 @@ class Ball():
         x_dist = 0
         xv_change = False
         yv_change = False
-        score_inc = 0
         power_up = None
         for i in range(start, abs(self.__x_velocity) + 1):
             x_dist = mul * i
             new_x = self.__row
             new_y = self.__column + x_dist
             if(grid[new_x][new_y] != None):
-                score_inc += 10
                 if(grid[new_x][new_y].is_exploding()):
                     grid = self.__explode(grid, new_x, new_y)
                     xv_change, yv_change = self.__dir_change(
@@ -122,10 +120,9 @@ class Ball():
         if(yv_change):
             self.__y_velocity *= -1
         self.__column += x_dist
-        return bricks, score_inc, power_up, xv_change or yv_change
+        return bricks, power_up, xv_change or yv_change
 
     def get_ball(self, length, width, row, left_end, paddle_lenth, bricks):
-        score_inc = 0
         power_up = None
         if(not self.__start and int((time.time() - self.__last_change) / 0.1) > 0):
             self.__set_velocity(length, width, row, left_end,
@@ -133,10 +130,9 @@ class Ball():
             mul = 1
             if(self.__y_velocity < 0):
                 mul = -1
-            for i in range(1, abs(self.__y_velocity) + 1):
-                val = i * mul
-                self.__row -= val
-                bricks, score_inc, power_up, flag = self.__bricks_collision(
+            for _ in range(1, abs(self.__y_velocity) + 1):
+                self.__row -= mul
+                bricks, power_up, flag = self.__bricks_collision(
                     bricks, length, width)
                 if(flag):
                     break
@@ -147,7 +143,7 @@ class Ball():
         self.__row = max(self.__row, 0)
         self.__column = max(self.__column, 0)
         self.__column = min(self.__column, length - 1)
-        return self.__row, self.__column, bricks, score_inc, power_up
+        return self.__row, self.__column, bricks, power_up
 
     def is_start(self):
         return self.__start
