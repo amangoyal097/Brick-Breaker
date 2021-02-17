@@ -9,9 +9,9 @@ from grab import Grab
 from random import choice
 
 
-class Normal(Brick):
+class Normal(Brick):  # class for the normal Brick
 
-    def __init__(self, x, y, strength, contains_power_up):
+    def __init__(self, x, y, strength, contains_power_up):  # constructor for the normal Brick
         super().__init__(x, y, contains_power_up)
         self.__strength = strength
         if(strength == 3):
@@ -21,7 +21,7 @@ class Normal(Brick):
         if(strength == 1):
             self.__color = Fore.GREEN
 
-    def get_values(self):
+    def get_values(self):  # Returns the values needed to display the brick
         if(self.__strength == 3):
             self.__color = Fore.RED
         if(self.__strength == 2):
@@ -30,6 +30,7 @@ class Normal(Brick):
             self.__color = Fore.GREEN
         return self._x, self._y, self.__color
 
+    # decreases the strength of the brick and releases power up if it contains
     def dec_strength(self, value):
         power_ups = [Grab, Shrink, Multiplier, Fast, Through, Expand]
         self.__strength -= value

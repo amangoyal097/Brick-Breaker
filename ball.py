@@ -3,9 +3,9 @@ import time
 import numpy as np
 
 
-class Ball():
+class Ball():  # class for the ball
 
-    def __init__(self, row, column, xv, yv, start):
+    def __init__(self, row, column, xv, yv, start):  # constructor for the ball
         self.__row = row
         self.__column = column
         self.__start = start
@@ -16,6 +16,7 @@ class Ball():
         self.__last_change = time.time()
         self.__grab = False
 
+    # check if the ball has collided with the paddle
     def __paddle_collision(self, row, left_end, length):
         if(self.__start == False
            and self.__row == row - 1
@@ -26,7 +27,10 @@ class Ball():
                 int(length / 2) + 1
             if(self.__grab):
                 self.__start = True
+            return True
+        return False
 
+    # reverse velocity if the ball hits the wall
     def __set_velocity(self, length, width, row, left_end, paddle_length):
 
         if(self.__row == 0 or self.__row == width - 1):
@@ -35,8 +39,9 @@ class Ball():
         if(self.__column == 0 or self.__column == length - 1):
             self.__x_velocity *= -1
 
-        self.__paddle_collision(row, left_end, paddle_length)
+        return self.__paddle_collision(row, left_end, paddle_length)
 
+    # change ball velocity according to the brick location
     def __change_velocity(self, y1, x1, x2, y2):
         xv_change = False
         yv_change = False
@@ -55,7 +60,7 @@ class Ball():
 
         return xv_change, yv_change
 
-    def __dir_change(self, grid, x, y):
+    def __dir_change(self, grid, x, y):  # change the direction of the ball
         xv_change = False
         yv_change = False
         if(grid[x - 1][y] == None or grid[x + 1][y] == None and grid[x][y - 1] != None and grid[x][y + 1] != None):
@@ -65,17 +70,19 @@ class Ball():
                 self.__column, self.__row, x, y)
         return xv_change, yv_change
 
+    # Recursive function to blow bricks adjacent to the exploding bricks
     def __explode(self, grid, x, y):
         if(grid[x][y] == None or not grid[x][y].is_present()):
             return grid
         grid[x][y].destroy()
         if(grid[x][y].is_exploding()):
-            for i in {-2, 0, 2}:
-                for j in {-2, 0, 2}:
+            for i in {-1, 0, 1}:
+                for j in {-1, 0, 1}:
                     if((i or j) and grid[x + i][y + j] != None):
                         grid = self.__explode(grid, x + i, y + j)
         return grid
 
+    # Check the collision with the bricks
     def __bricks_collision(self, bricks, length, width):
         mul = 1
         if(self.__x_velocity < 0):
@@ -122,16 +129,18 @@ class Ball():
         self.__column += x_dist
         return bricks, power_up, xv_change or yv_change
 
+    # Return the location of the ball after this frame
     def get_ball(self, length, width, row, left_end, paddle_lenth, bricks):
         power_up = None
         if(not self.__start and int((time.time() - self.__last_change) / 0.1) > 0):
-            self.__set_velocity(length, width, row, left_end,
-                                paddle_lenth)
             mul = 1
             if(self.__y_velocity < 0):
                 mul = -1
             for _ in range(1, abs(self.__y_velocity) + 1):
                 self.__row -= mul
+                if(self.__set_velocity(length, width, row, left_end,
+                                       paddle_lenth)):
+                    break
                 bricks, power_up, flag = self.__bricks_collision(
                     bricks, length, width)
                 if(flag):
@@ -145,25 +154,26 @@ class Ball():
         self.__column = min(self.__column, length - 1)
         return self.__row, self.__column, bricks, power_up
 
-    def is_start(self):
+    def is_start(self):  # If the ball is stuck to the paddle
         return self.__start
 
-    def is_present(self):
+    def is_present(self):  # If the ball is in play
         return self.__is_present
 
-    def set_start(self, start):
+    def set_start(self, start):  # Make the ball stick to the paddle
         self.__start = start
         self.__last_change = time.time()
 
-    def move(self, value):
+    def move(self, value):  # Move the ball according to the paddle if the ball is stuck to the paddle
         self.__column += value
 
-    def get_values(self):
+    def get_values(self):  # Returns the values needed to display the ball
         return self.__row, self.__column, self.__x_velocity, self.__y_velocity
 
-    def finish(self):
+    def finish(self):  # Ball is no longer in play
         self.__is_present = False
 
+    # Change the vertical velocity of the ball to make the ball fast or slow
     def change_yv(self, value):
         mul = 1
         if(self.__y_velocity < 0):
@@ -173,8 +183,8 @@ class Ball():
             magnitude = 1
         self.__y_velocity = mul * magnitude
 
-    def set_through(self, value):
+    def set_through(self, value):  # Set the ball if it is a through ball
         self.__through = value
 
-    def set_grab(self, value):
+    def set_grab(self, value):  # if the ball has to stick to the paddle when it hits the paddle
         self.__grab = value
