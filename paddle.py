@@ -12,12 +12,12 @@ class Paddle:  # Class for the Paddle
 
     def move(self, length, is_start, key, move, set_start):
         # Moves the paddle left or right or releases the ball
-        if(key == 'd' or key == 'D' and length >= self.__left_end + self.__length):
+        if(key == 'd' and length >= self.__left_end + self.__length):
             self.__left_end += 2
             if(is_start):
                 move(2)
 
-        if(key == 'a' or key == 'A' and self.__left_end > 1):
+        if(key == 'a' and self.__left_end > 1):
             self.__left_end -= 2
             if(is_start):
                 move(-2)

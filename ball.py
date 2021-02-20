@@ -27,8 +27,6 @@ class Ball():  # class for the ball
                 int(length / 2) + 1
             if(self.__grab):
                 self.__start = True
-            return True
-        return False
 
     # reverse velocity if the ball hits the wall
     def __set_velocity(self, length, width, row, left_end, paddle_length):
@@ -39,7 +37,7 @@ class Ball():  # class for the ball
         if(self.__column == 0 or self.__column == length - 1):
             self.__x_velocity *= -1
 
-        return self.__paddle_collision(row, left_end, paddle_length)
+        self.__paddle_collision(row, left_end, paddle_length)
 
     # change ball velocity according to the brick location
     def __change_velocity(self, y1, x1, x2, y2):
@@ -83,7 +81,7 @@ class Ball():  # class for the ball
         return grid
 
     # Check the collision with the bricks
-    def __bricks_collision(self, bricks, length, width):
+    def __bricks_collision(self, bricks, length, width, y_dist):
         mul = 1
         if(self.__x_velocity < 0):
             mul = -1
@@ -96,19 +94,19 @@ class Ball():  # class for the ball
         start = 1
         if(self.__x_velocity == 0):
             start = 0
-        x_dist = 0
         xv_change = False
         yv_change = False
         power_up = None
         for i in range(start, abs(self.__x_velocity) + 1):
             x_dist = mul * i
-            new_x = self.__row
+            new_x = self.__row - y_dist
             new_y = self.__column + x_dist
             if(grid[new_x][new_y] != None):
                 if(grid[new_x][new_y].is_exploding()):
                     grid = self.__explode(grid, new_x, new_y)
-                    xv_change, yv_change = self.__dir_change(
-                        grid, new_x, new_y)
+                    if(not self.__through):
+                        xv_change, yv_change = self.__dir_change(
+                            grid, new_x, new_y)
                 elif(self.__through):
                     grid[new_x][new_y].destroy()
                 else:
@@ -127,6 +125,7 @@ class Ball():  # class for the ball
         if(yv_change):
             self.__y_velocity *= -1
         self.__column += x_dist
+        self.__row -= y_dist
         return bricks, power_up, xv_change or yv_change
 
     # Return the location of the ball after this frame
@@ -134,15 +133,13 @@ class Ball():  # class for the ball
         power_up = None
         if(not self.__start and int((time.time() - self.__last_change) / 0.1) > 0):
             mul = 1
+            self.__set_velocity(length, width, row, left_end,
+                                paddle_lenth)
             if(self.__y_velocity < 0):
                 mul = -1
             for _ in range(1, abs(self.__y_velocity) + 1):
-                self.__row -= mul
-                if(self.__set_velocity(length, width, row, left_end,
-                                       paddle_lenth)):
-                    break
                 bricks, power_up, flag = self.__bricks_collision(
-                    bricks, length, width)
+                    bricks, length, width, mul)
                 if(flag):
                     break
             self.__last_change = time.time()
